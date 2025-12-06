@@ -61,6 +61,10 @@ VectorGraph DB is a modern hybrid search engine that combines vector similarity 
 | **React 18** | Modern UI framework |
 | **TypeScript** | Type-safe development |
 | **Vite** | Fast build tooling |
+| **TanStack Query** | Data fetching and caching |
+| **shadcn/ui** | Accessible component library |
+| **Tailwind CSS** | Modern gradient design system |
+| **Recharts** | Data visualization |
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -96,10 +100,6 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 # In a new terminal - Frontend setup
 cd ../frontend
 npm install
-cp .env.example .env
-npm run dev
-```
-
 ### Option 2: Manual Setup
 
 #### Backend
@@ -107,6 +107,97 @@ npm run dev
 cd backend
 
 # Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your settings:
+# NEO4J_URI=bolt://localhost:7687
+# NEO4J_USER=neo4j
+# NEO4J_PASSWORD=your_password
+# EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+
+# Start server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Frontend
+```bash
+cd frontend
+
+| `POST` | `/ingest/document` | Ingest document (auto-chunked) |
+| `POST` | `/ingest/bulk` | Batch ingest multiple documents |
+| `GET` | `/nodes` | List nodes (paginated, filterable) |
+| `POST` | `/nodes` | Create new node |
+| `GET` | `/nodes/{id}` | Get node by ID |
+| `PUT` | `/nodes/{id}` | Update node |
+| `DELETE` | `/nodes/{id}` | Delete node |
+| `GET` | `/nodes/{id}/neighbors` | Get node neighbors |
+| `GET` | `/edges` | List edges (paginated, filterable) |
+| `POST` | `/edges` | Create new edge |
+| `GET` | `/edges/{id}` | Get edge by ID |
+| `DELETE` | `/edges/{id}` | Delete edge |
+
+### System
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `GET` | `/stats` | System statistics and metrics |
+
+## 📥 Data Ingestion Examples
+
+### From Verified Datasets
+```bash
+# Activate backend environment
+cd backend
+source venv/bin/activate
+
+# Ingest 10K arXiv papers (AI/ML)
+python -m scripts.ingest_bulk -l 10000 -t arxiv
+
+# Ingest 10K PubMed articles (Medical)
+python -m scripts.ingest_bulk -l 10000 -t pubmed
+
+# Generate synthetic topic data
+python -m scripts.generate_topics_data --per-topic 100 --output data/topics.json
+
+# Ingest from generated JSON
+python -m scripts.ingest_bulk --source json --file data/topics.json -l 5000
+```
+
+### Via API
+```bash
+# Single node
+curl -X POST http://localhost:8000/ingest/node \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Machine learning is transforming healthcare",
+    "metadata": {"title": "ML in Healthcare", "topic": "AI"}
+  }'
+
+# Hybrid search
+curl -X POST http://localhost:8000/search/hybrid \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query_text": "artificial intelligence in medicine",
+    "top_k": 10
+  }'
+```
+│   ├── tailwind.config.ts       # Tailwind configuration
+│   ├── package.json             # Node dependencies
+│   └── .env.example             # Environment template
+│
+└── README.md                    # This file
+```
+### Access the Application
+- **Frontend**: http://localhost:8080
+- **API Docs**: http://localhost:8000/docs
+- **API**: http://localhost:8000
+- **Neo4j Browser**: http://localhost:7474onment
 python3 -m venv venv
 source venv/bin/activate  # Windows: .\venv\Scripts\activate
 
@@ -180,112 +271,14 @@ vec/
 │   │   ├── types/
 │   │   │   └── index.ts         # TypeScript definitions
 │   │   ├── App.tsx              # Main application
-│   │   ├── main.tsx             # Entry point
-│   │   └── index.css            # Global styles
-│   ├── vite.config.ts           # Vite configuration
-│   ├── tailwind.config.ts       # Tailwind configuration
-│   ├── package.json             # Node dependencies
-│   └── .env.example             # Environment template
-│
-├── BACKEND_SETUP.md             # Detailed setup guide
-├── BACKEND_STATUS.md            # System requirements checklist
-└── README.md                    # This file
-```
-
-## ⚙️ Configuration
-
-### Backend Environment Variables (.env)
-```env
-# Neo4j Connection
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=password
-NEO4J_DATABASE=neo4j
-
-# Embedding Model
-EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
-EMBEDDING_DIMENSION=384
-USE_MOCK_EMBEDDINGS=false
-
-# Data Persistence
-SNAPSHOT_PATH=data/snapshot.json
-AUTO_REBUILD_ON_STARTUP=true
-
-# API Settings
-LOG_LEVEL=INFO
-DEFAULT_PAGE_SIZE=10
-MAX_PAGE_SIZE=100
-```
-
-### Frontend Environment Variables (.env)
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-## 🔧 Troubleshooting
-
-### Backend Issues
-
-**Neo4j Connection Failed**
-- Ensure Neo4j is running: `brew services list | grep neo4j`
-- Check credentials in `.env`
-- Verify URI: `bolt://localhost:7687`
-
-**Module Not Found**
-- Activate virtual environment: `source venv/bin/activate`
-- Reinstall dependencies: `pip install -r requirements.txt`
-
-**Embedding Model Download Fails**
-- Set `USE_MOCK_EMBEDDINGS=true` in `.env` for testing
-- Check internet connection for first-time model download (~80MB)
-
-### Frontend Issues
-
-**Cannot Connect to Backend**
-- Verify backend is running on port 8000
-- Check `VITE_API_URL` in `.env`
-- Check browser console for CORS errors
-
-**Module Resolution Errors**
-- Clear node_modules: `rm -rf node_modules && npm install`
-- Clear Vite cache: `rm -rf node_modules/.vite`
-
-## 🎨 UI Features
-
-- **Modern Gradient Design**: Dark theme with purple, blue, and pink gradients
-- **Glassmorphism**: Backdrop blur effects throughout
-- **Smooth Animations**: Page transitions and hover effects
-- **Real-time Updates**: Live metrics and health monitoring
-- **Responsive Layout**: Mobile-friendly design
-- **Interactive Charts**: Data visualization with Recharts
-
-## 🚀 Performance
-
-- **FAISS**: CPU-optimized vector search (no GPU required)
-- **Lazy Loading**: On-demand embedding model download
-- **Caching**: TanStack Query for intelligent data caching
-- **Pagination**: Efficient data browsing
-- **Batch Operations**: Bulk ingestion support
-
 ## 📚 Additional Documentation
 
-- `BACKEND_SETUP.md` - Detailed backend setup instructions
-- `BACKEND_STATUS.md` - System requirements and status
 - API Documentation: http://localhost:8000/docs (when running)
+- OpenAPI Spec: http://localhost:8000/openapi.json
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
-source venv/bin/activate
-
-# Ingest 10K arXiv papers (AI/ML)
-python -m scripts.ingest_bulk -l 10000 -t arxiv
-
-# Ingest 10K PubMed articles (Medical)
-python -m scripts.ingest_bulk -l 10000 -t pubmed
-
-# Generate synthetic topic data
-python -m scripts.generate_topics_data --per-topic 100 --output data/topics.json
+MIT License - See LICENSE file for detailspic 100 --output data/topics.json
 
 # Ingest from generated JSON
 python -m scripts.ingest_bulk --source json --file data/topics.json -l 5000
